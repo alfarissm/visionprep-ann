@@ -105,19 +105,3 @@ project_uas/
   flattening, pengacakan, dan ANN seluruhnya implementasi NumPy manual.
 - **Pembuktian dataset.** ANN dilatih pada dataset hasil pipeline dan mencapai
   akurasi ~98–100% pada 3 kelas Katakana, membuktikan dataset terpisah dengan baik.
-
----
-
-## Anggota Kelompok
-
-Program Studi S1 Informatika — INF322 Image Processing
-Universitas Pembangunan Jaya
-
-| Nama | NIM |
-|------|-----|
-| Azi Dwipurnama | 2023071025 |
-| Muhamad Aulia Rifki | 2023071026 |
-| Benediktus Aditya Pratama | 2023071027 |
-| Marcelinus Nugraha Pratama | 2023071028 |
-| Muhamad Al Fariz | 2023071029 |
-| Dava Pangestu Putera | 2023071030 |
