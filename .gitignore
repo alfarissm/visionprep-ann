@@ -20,3 +20,9 @@ archive/test_images/*_bin.jpg
 
 # Zips
 *.zip
+
+# Dokumen & arsip (tidak ikut repo — app saja)
+article/
+docs/
+archive/
+*.docx

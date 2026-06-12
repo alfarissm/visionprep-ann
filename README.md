@@ -5,7 +5,7 @@ validitas dataset melalui pelatihan **Artificial Neural Network (ANN)**. Dibuat
 sebagai proyek UAS mata kuliah **INF322 Image Processing**, Program Studi S1
 Informatika, Universitas Pembangunan Jaya.
 
-![Tampilan aplikasi VisionPrep](article/figures/preview_app.png)
+![Tampilan aplikasi VisionPrep](assets/preview_app.png)
 
 ---
 
@@ -75,22 +75,7 @@ project_uas/
 ├── dataset/                  # 60 gambar Katakana mentah (ア/イ/ウ × 20)
 │   └── _raw/                 #   gambar sumber asli
 │
-├── article/                  # artikel ilmiah + pembangkit aset
-│   ├── Artikel_INF322_VisionPrep.docx
-│   ├── generate_article.py   #   pembangkit dokumen artikel (python-docx)
-│   ├── generate_figures.py   #   pembangkit ilustrasi I/O & grafik
-│   ├── generate_diagram.py   #   pembangkit diagram alur
-│   ├── generate_code_images.py
-│   └── figures/              #   semua gambar hasil generate + preview app
-│
-├── docs/                     # spesifikasi soal + catatan desain
-│   └── design.md
-│
-└── archive/                  # varian alternatif (arsip, non-submit)
-    ├── main.py               #   versi modular awal
-    ├── main_single.py        #   versi satu-berkas
-    ├── processing/           #   modul versi modular awal
-    └── test_images/          #   uji coba dataset Hangul
+└── assets/                   # gambar pendukung README (preview aplikasi)
 ```
 
 ---
