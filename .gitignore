@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+
+# Office temp lock
+~$*
+
+# Generated preprocessing artifacts (dibuat ulang oleh program)
+dataset/*_gs.jpg
+dataset/*_rs.jpg
+dataset/*_bin.jpg
+dataset/*.npy
+dataset/classes.txt
+
+# Archive of trained weights / test artifacts
+archive/test_images/*.npy
+archive/test_images/*_gs.jpg
+archive/test_images/*_rs.jpg
+archive/test_images/*_bin.jpg
+
+# Zips
+*.zip

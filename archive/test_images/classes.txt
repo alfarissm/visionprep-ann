@@ -1,0 +1,4 @@
+20 20
+hangul_a
+hangul_eo
+hangul_i
