@@ -1,9 +1,11 @@
 # VisionPrep — Semi-Automatic Image Preprocessing & ANN
 
-Aplikasi desktop GUI untuk **pra-pemrosesan citra semi-otomatis** dan pembuktian
-validitas dataset melalui pelatihan **Artificial Neural Network (ANN)**. Dibuat
-sebagai proyek UAS mata kuliah **INF322 Image Processing**, Program Studi S1
-Informatika, Universitas Pembangunan Jaya.
+VisionPrep adalah aplikasi desktop untuk **pra-pemrosesan citra semi-otomatis**
+yang mengubah kumpulan gambar mentah menjadi dataset numerik siap latih, lalu
+membuktikan validitas dataset tersebut dengan melatih **Artificial Neural Network
+(ANN)** sederhana. Seluruh algoritma pemrosesan citra dan jaringan saraf ditulis
+manual hanya dengan **NumPy** — tanpa OpenCV, Pillow, scikit-image, TensorFlow,
+maupun PyTorch.
 
 ![Tampilan aplikasi VisionPrep](assets/preview_app.png)
 
@@ -11,15 +13,19 @@ Informatika, Universitas Pembangunan Jaya.
 
 ## Ringkasan
 
-VisionPrep mengubah kumpulan gambar mentah (`.jpg`) menjadi dataset numerik siap
-latih melalui pipeline lima tahap, lalu membuktikan dataset tersebut valid dengan
-melatih ANN sederhana hingga konvergen. Seluruh algoritma pemrosesan citra dan
-jaringan saraf ditulis **manual hanya dengan NumPy** — tanpa OpenCV, Pillow,
-scikit-image, TensorFlow, atau PyTorch. Visualisasi memakai Matplotlib; antarmuka
-memakai Tkinter (pustaka standar Python).
+VisionPrep menjalankan pipeline lima tahap: grayscale → resizing → binarization →
+pembuatan dataset → pengacakan, kemudian melatih ANN hingga konvergen sebagai bukti
+bahwa dataset hasil pipeline terpisah dengan baik antar-kelas. Visualisasi memakai
+**Matplotlib**, antarmuka memakai **Tkinter** (pustaka standar Python). Pemrosesan
+bersifat semi-otomatis: pengguna memilih tahap dan parameter, lalu menekan tombol
+START untuk menjalankannya.
 
 Dataset contoh: **60 gambar huruf Katakana** tulisan tangan (ア / イ / ウ),
 masing-masing 20 sampel.
+
+### Alur Pipeline
+
+![Diagram alur pipeline](assets/diagram_alur.png)
 
 ---
 
@@ -33,6 +39,41 @@ masing-masing 20 sampel.
 | 4 | **Creating Dataset** | Flatten tiap citra biner menjadi satu baris vektor + kolom indeks; label dibuat **one-hot**, kelas dideteksi otomatis dari awalan nama berkas. |
 | 5 | **Randomize Dataset** | Pengacakan baris `inputs` & `labels` dengan deret indeks yang sama agar pasangan tetap konsisten. |
 | 6 | **Pembuktian — ANN** | Jaringan 1 hidden layer, aktivasi sigmoid, backpropagation, learning rate 0.001. Melatih, menguji in-sample, dan menguji gambar custom. |
+
+---
+
+## Demonstrasi Tiap Tahap
+
+**1. Color-to-Grayscale** — RGB diringkas menjadi satu kanal intensitas.
+
+![Input-output grayscale](assets/io_grayscale.png)
+
+**2. Resizing (Pooling)** — jendela piksel diringkas. Average Pooling merata-ratakan
+nilai sehingga goresan tipis tetap terbaca; Max Pooling mengambil nilai maksimum.
+
+![Ilustrasi pooling](assets/ilustrasi_pooling.png)
+
+![Input-output resizing](assets/io_resizing.png)
+
+**3. Binarization** — piksel di atas/di bawah threshold dipetakan ke 0/1, dengan
+opsi inversi agar objek menjadi putih di atas latar hitam.
+
+![Input-output binarization](assets/io_binarization.png)
+
+**4. Creating Dataset** — tiap citra biner di-flatten dan dilabeli, menghasilkan
+satu matriks dataset.
+
+![Montase dataset](assets/montase_dataset.png)
+
+**5. Randomize Dataset** — urutan baris diacak agar pelatihan tidak bias urutan
+kelas; pasangan input–label tetap konsisten.
+
+![Pengacakan urutan dataset](assets/randomize_order.png)
+
+**6. Pembuktian — ANN** — ANN dilatih pada dataset hasil pipeline dan mencapai
+akurasi ~98–100% pada 3 kelas Katakana.
+
+![Grafik akurasi pelatihan](assets/grafik_akurasi.png)
 
 ---
 
@@ -57,11 +98,21 @@ Contoh parameter dataset Katakana: Resize `20 × 30`, Average Pooling, threshold
 
 ---
 
-## Struktur Repository
+## Arsitektur ANN
+
+- **Topologi:** 1 hidden layer; jumlah input neuron = Row × Col, output neuron = jumlah kelas.
+- **Aktivasi:** sigmoid pada hidden dan output layer.
+- **Pelatihan:** backpropagation, learning rate `0.001`, input dinormalisasi ke rentang 0–1 agar sigmoid tidak saturasi.
+- **Bobot awal:** acak seragam `[-0.5, 0.5]`, bias awal nol.
+- **Evaluasi:** uji in-sample (akurasi terhadap data latih) dan uji gambar custom melalui forward propagation.
+
+---
+
+## Struktur Proyek
 
 ```
-project_uas/
-├── program/                  # APLIKASI UTAMA (yang disubmit)
+visionprep/
+├── program/                  # aplikasi utama
 │   ├── gui.py                #   antarmuka Tkinter + Matplotlib (orkestrasi)
 │   ├── grayscale.py          #   Tahap 1  — to_grayscale()
 │   ├── resizing.py           #   Tahap 2  — resize_pooling() [AVERAGE/MAX]
@@ -75,7 +126,7 @@ project_uas/
 ├── dataset/                  # 60 gambar Katakana mentah (ア/イ/ウ × 20)
 │   └── _raw/                 #   gambar sumber asli
 │
-└── assets/                   # gambar pendukung README (preview aplikasi)
+└── assets/                   # gambar pendukung README
 ```
 
 ---
@@ -83,9 +134,8 @@ project_uas/
 ## Catatan Desain
 
 - **Pemisahan per fitur.** Tiap tahap berada pada berkasnya sendiri dan hanya
-  mengimpor `numpy` (kecuali `dataset.py` yang juga memakai `common`), mengikuti
-  gaya kode materi M10–M14. `gui.py` adalah satu-satunya berkas yang mengimpor
-  `os` (membaca isi folder) dan Tkinter.
+  mengimpor `numpy` (kecuali `dataset.py` yang juga memakai `common`). `gui.py`
+  adalah satu-satunya berkas yang mengimpor `os` (membaca isi folder) dan Tkinter.
 - **Tanpa pustaka pihak ketiga di inti.** Grayscale, pooling, binarisasi,
   flattening, pengacakan, dan ANN seluruhnya implementasi NumPy manual.
 - **Pembuktian dataset.** ANN dilatih pada dataset hasil pipeline dan mencapai
