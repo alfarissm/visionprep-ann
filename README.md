@@ -7,7 +7,9 @@ membuktikan validitas dataset tersebut dengan melatih **Artificial Neural Networ
 manual hanya dengan **NumPy** — tanpa OpenCV, Pillow, scikit-image, TensorFlow,
 maupun PyTorch.
 
-![Tampilan aplikasi VisionPrep](assets/preview_app.png)
+<p align="center">
+  <img src="assets/preview_app.png" alt="Tampilan aplikasi VisionPrep" width="100%">
+</p>
 
 ---
 
@@ -25,7 +27,9 @@ masing-masing 20 sampel.
 
 ### Alur Pipeline
 
-![Diagram alur pipeline](assets/diagram_alur.png)
+<p align="center">
+  <img src="assets/diagram_alur.png" alt="Diagram alur pipeline" width="100%">
+</p>
 
 ---
 
@@ -46,34 +50,48 @@ masing-masing 20 sampel.
 
 **1. Color-to-Grayscale** — RGB diringkas menjadi satu kanal intensitas.
 
-![Input-output grayscale](assets/io_grayscale.png)
+<p align="center">
+  <img src="assets/io_grayscale.png" alt="Input-output grayscale" width="85%">
+</p>
 
 **2. Resizing (Pooling)** — jendela piksel diringkas. Average Pooling merata-ratakan
 nilai sehingga goresan tipis tetap terbaca; Max Pooling mengambil nilai maksimum.
 
-![Ilustrasi pooling](assets/ilustrasi_pooling.png)
+<p align="center">
+  <img src="assets/ilustrasi_pooling.png" alt="Ilustrasi pooling" width="70%">
+</p>
 
-![Input-output resizing](assets/io_resizing.png)
+<p align="center">
+  <img src="assets/io_resizing.png" alt="Input-output resizing" width="85%">
+</p>
 
 **3. Binarization** — piksel di atas/di bawah threshold dipetakan ke 0/1, dengan
 opsi inversi agar objek menjadi putih di atas latar hitam.
 
-![Input-output binarization](assets/io_binarization.png)
+<p align="center">
+  <img src="assets/io_binarization.png" alt="Input-output binarization" width="85%">
+</p>
 
 **4. Creating Dataset** — tiap citra biner di-flatten dan dilabeli, menghasilkan
 satu matriks dataset.
 
-![Montase dataset](assets/montase_dataset.png)
+<p align="center">
+  <img src="assets/montase_dataset.png" alt="Montase dataset" width="80%">
+</p>
 
 **5. Randomize Dataset** — urutan baris diacak agar pelatihan tidak bias urutan
 kelas; pasangan input–label tetap konsisten.
 
-![Pengacakan urutan dataset](assets/randomize_order.png)
+<p align="center">
+  <img src="assets/randomize_order.png" alt="Pengacakan urutan dataset" width="80%">
+</p>
 
 **6. Pembuktian — ANN** — ANN dilatih pada dataset hasil pipeline dan mencapai
 akurasi ~98–100% pada 3 kelas Katakana.
 
-![Grafik akurasi pelatihan](assets/grafik_akurasi.png)
+<p align="center">
+  <img src="assets/grafik_akurasi.png" alt="Grafik akurasi pelatihan" width="70%">
+</p>
 
 ---
 
