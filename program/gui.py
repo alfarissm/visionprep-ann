@@ -1,7 +1,8 @@
 """Antarmuka Tkinter untuk tool preprocessing — UAS INF322.
 
 Memanggil fungsi inti pada preprocessing.py. Hanya memakai NumPy, Matplotlib,
-dan Tkinter. Jalankan: python gui.py
+dan Tkinter. Gaya tampilan klasik Windows (ttk tema 'vista'): tombol timbul,
+group box, dan daftar native. Jalankan: python gui.py
 """
 
 import os
@@ -14,22 +15,25 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import ttk
 
 import preprocessing as pp
 
-# --------------------------------------------------------------------- tema
-BG = "#F4F6FB"
-SURFACE = "#FFFFFF"
-SURFACE2 = "#EEF1F7"
-BORDER = "#D9DFEA"
-TEXT = "#1A2230"
-MUTED = "#6B7686"
-ACCENT = "#3B6CF6"
-ACCENT_HI = "#1E4FD8"
-INK = "#FFFFFF"
-DANGER = "#E5484D"
-CONSOLE = "#F1F3F9"
-CONSOLE_FG = "#2A3344"
+# ----------------------------------------------------------- tema klasik Win7
+FACE = "#F0F0F0"      # warna dialog/jendela (Windows 7)
+FIELD = "#FFFFFF"     # latar kolom isian / daftar
+TEXT = "#1A1A1A"
+MUTED = "#5A5A5A"
+ACCENT = "#1565C0"    # biru judul (gaya tautan Win7)
+BORDER = "#C2C2C2"
+SEL_BG = "#CCE4F7"    # sorot pilihan (Win7)
+DANGER = "#C42B1C"
+
+F_UI = ("Segoe UI", 9)
+F_BOLD = ("Segoe UI", 9, "bold")
+F_TITLE = ("Segoe UI", 18, "bold")
+F_SUB = ("Segoe UI", 8)
+F_MONO = ("Consolas", 9)
 
 STAGES = [
     ("Color-to-Grayscale", "grayscale"),
@@ -56,139 +60,14 @@ def safe_read(path):
         return None
 
 
-def round_points(x1, y1, x2, y2, r):
-    return [
-        x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r,
-        x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
-        x1, y2, x1, y2 - r, x1, y1 + r, x1, y1,
-    ]
-
-
-class Card(tk.Canvas):
-    """Panel sudut-bulat; konten di self.body."""
-
-    def __init__(self, master, radius=12, pad=10, fill=SURFACE,
-                 border=BORDER, bg=BG, expand=False):
-        super().__init__(master, bg=bg, highlightthickness=0, bd=0)
-        self.radius, self.pad, self.fill, self.border = radius, pad, fill, border
-        self.expand = expand
-        self.body = tk.Frame(self, bg=fill)
-        self._win = self.create_window(pad, pad, anchor="nw", window=self.body)
-        self.bind("<Configure>", self._on_canvas)
-        if not expand:
-            self.body.bind("<Configure>", self._on_body)
-
-    def _draw(self, w, h):
-        self.delete("shape")
-        pts = round_points(1, 1, w - 1, h - 1, self.radius)
-        self.create_polygon(pts, smooth=True, splinesteps=32, fill=self.fill,
-                            outline=self.border, tags="shape")
-        self.tag_lower("shape")
-
-    def _on_canvas(self, event):
-        self._draw(event.width, event.height)
-        self.itemconfigure(self._win, width=event.width - 2 * self.pad)
-        if self.expand:
-            self.itemconfigure(self._win, height=event.height - 2 * self.pad)
-
-    def _on_body(self, event):
-        self.configure(height=event.height + 2 * self.pad)
-
-
-class RoundedButton(tk.Canvas):
-    """Tombol sudut-bulat dengan efek hover."""
-
-    def __init__(self, master, text, command, fill=ACCENT, fg=INK,
-                 hover=ACCENT_HI, font=("Bahnschrift", 13), height=40,
-                 radius=11, bg=BG):
-        super().__init__(master, bg=bg, highlightthickness=0, bd=0,
-                         height=height)
-        self.command, self.fill, self.hover, self.radius = command, fill, hover, radius
-        self._text = self.create_text(0, 0, text=text, fill=fg, font=font)
-        self.bind("<Configure>", self._on_configure)
-        self.bind("<Button-1>", lambda e: self._fire())
-        self.bind("<Enter>", lambda e: self._paint(self.hover))
-        self.bind("<Leave>", lambda e: self._paint(self.fill))
-        self.configure(cursor="hand2")
-        self._enabled = True
-
-    def _on_configure(self, event):
-        self.delete("shape")
-        pts = round_points(1, 1, event.width - 1, event.height - 1, self.radius)
-        self.create_polygon(pts, smooth=True, splinesteps=28,
-                            fill=self.fill, outline="", tags="shape")
-        self.tag_lower("shape")
-        self.coords(self._text, event.width / 2, event.height / 2)
-
-    def _paint(self, color):
-        if self._enabled:
-            self.itemconfigure("shape", fill=color)
-
-    def _fire(self):
-        if self._enabled:
-            self.command()
-
-    def set_enabled(self, enabled, text=None):
-        self._enabled = enabled
-        self.itemconfigure("shape", fill=self.fill if enabled else BORDER)
-        if text is not None:
-            self.itemconfigure(self._text, text=text)
-        self.configure(cursor="hand2" if enabled else "arrow")
-
-
-class StageButton(tk.Frame):
-    """Baris tahap klik-able dengan nomor + judul dan status aktif."""
-
-    def __init__(self, master, index, title, command):
-        super().__init__(master, bg=SURFACE, cursor="hand2")
-        self.command = command
-        self.active = False
-        self.bar = tk.Frame(self, bg=SURFACE, width=3)
-        self.bar.pack(side="left", fill="y")
-        self.inner = tk.Frame(self, bg=SURFACE)
-        self.inner.pack(side="left", fill="x", expand=True, padx=(10, 8), pady=6)
-        self.num = tk.Label(self.inner, text=f"{index:02d}", bg=SURFACE,
-                            fg=MUTED, font=("Cascadia Mono", 10))
-        self.num.pack(side="left")
-        self.label = tk.Label(self.inner, text=title, bg=SURFACE, fg=TEXT,
-                             font=("Segoe UI", 11), anchor="w")
-        self.label.pack(side="left", padx=(8, 0))
-        for w in (self, self.inner, self.num, self.label, self.bar):
-            w.bind("<Button-1>", lambda e: self.command())
-            w.bind("<Enter>", self._enter)
-            w.bind("<Leave>", self._leave)
-
-    def _enter(self, _e):
-        if not self.active:
-            self._paint(SURFACE2, TEXT, MUTED)
-
-    def _leave(self, _e):
-        if not self.active:
-            self._paint(SURFACE, TEXT, MUTED)
-
-    def set_active(self, active):
-        self.active = active
-        if active:
-            self._paint(SURFACE2, ACCENT, ACCENT, bar=ACCENT)
-        else:
-            self._paint(SURFACE, TEXT, MUTED, bar=SURFACE)
-
-    def _paint(self, bg, label_fg, num_fg, bar=None):
-        for w in (self, self.inner, self.num, self.label):
-            w.configure(bg=bg)
-        self.num.configure(fg=num_fg)
-        self.label.configure(fg=label_fg)
-        if bar is not None:
-            self.bar.configure(bg=bar)
-
-
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("VISIONPREP · Image Preprocessing Tool — INF322")
-        self.geometry("1200x800")
-        self.minsize(1080, 720)
-        self.configure(bg=BG)
+        self.title("VisionPrep - Image Preprocessing Tool (INF322)")
+        self.geometry("1180x800")
+        self.minsize(1060, 720)
+        self.configure(bg=FACE)
+        self._init_style()
 
         self.raw_paths = []
         self.classes = []
@@ -199,7 +78,6 @@ class App(tk.Tk):
         self.last_pred = None
 
         self.stage_key = STAGES[0][1]
-        self.stage_buttons = {}
 
         self.var_folder = tk.StringVar()
         self.var_pooling = tk.StringVar(value=pp.AVERAGE)
@@ -214,15 +92,33 @@ class App(tk.Tk):
         self._build()
         self.select_stage(self.stage_key)
 
+    # ------------------------------------------------------------------ gaya
+    def _init_style(self):
+        style = ttk.Style(self)
+        for theme in ("vista", "xpnative", "winnative", "clam"):
+            if theme in style.theme_names():
+                style.theme_use(theme)
+                break
+        style.configure(".", background=FACE, foreground=TEXT, font=F_UI)
+        style.configure("TFrame", background=FACE)
+        style.configure("TLabel", background=FACE, foreground=TEXT)
+        style.configure("TLabelframe", background=FACE)
+        style.configure("TLabelframe.Label", background=FACE, foreground=ACCENT,
+                        font=F_BOLD)
+        style.configure("TCheckbutton", background=FACE)
+        style.configure("TRadiobutton", background=FACE)
+        style.configure("Big.TButton", font=("Segoe UI", 12, "bold"),
+                        padding=(10, 10))
+
     # --------------------------------------------------------------- layout
     def _build(self):
         self._build_header()
-        body = tk.Frame(self, bg=BG)
-        body.pack(fill="both", expand=True, padx=12, pady=(8, 12))
+        body = ttk.Frame(self, padding=(10, 4, 10, 10))
+        body.pack(fill="both", expand=True)
         body.columnconfigure(1, weight=1)
         body.rowconfigure(0, weight=1)
         self._build_sidebar(body)
-        right = tk.Frame(body, bg=BG)
+        right = ttk.Frame(body)
         right.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
         right.rowconfigure(0, weight=1)
         right.columnconfigure(0, weight=1)
@@ -230,190 +126,154 @@ class App(tk.Tk):
         self._build_params(right)
 
     def _build_header(self):
-        header = tk.Frame(self, bg=BG)
-        header.pack(fill="x", padx=14, pady=(12, 8))
-        left = tk.Frame(header, bg=BG)
-        left.pack(side="left")
-        row = tk.Frame(left, bg=BG)
-        row.pack(anchor="w")
-        tk.Label(row, text="VISION", bg=BG, fg=TEXT,
-                 font=("Bahnschrift", 22)).pack(side="left")
-        tk.Label(row, text="PREP", bg=BG, fg=ACCENT,
-                 font=("Bahnschrift", 22)).pack(side="left")
-        tk.Label(left, text="PREPROCESSING PIPELINE · DATASET MODEL VISION",
-                 bg=BG, fg=MUTED, font=("Cascadia Mono", 7)).pack(anchor="w")
-        self.lbl_status = tk.Label(header, text="● IDLE", bg=BG, fg=MUTED,
-                                   font=("Cascadia Mono", 9))
-        self.lbl_status.pack(side="right", pady=(6, 0))
+        header = tk.Frame(self, bg=FACE)
+        header.pack(fill="x", padx=14, pady=(12, 2))
+        row = tk.Frame(header, bg=FACE)
+        row.pack(side="left")
+        tk.Label(row, text="Vision", bg=FACE, fg=TEXT,
+                 font=F_TITLE).pack(side="left")
+        tk.Label(row, text="Prep", bg=FACE, fg=ACCENT,
+                 font=F_TITLE).pack(side="left")
+        tk.Label(header, text="Preprocessing pipeline · dataset model vision",
+                 bg=FACE, fg=MUTED, font=F_SUB).pack(side="left", padx=(10, 0),
+                                                     pady=(10, 0))
+        self.lbl_status = tk.Label(header, text="●  IDLE", bg=FACE,
+                                   fg=MUTED, font=F_BOLD)
+        self.lbl_status.pack(side="right", pady=(8, 0))
+        ttk.Separator(self, orient="horizontal").pack(fill="x", padx=12,
+                                                      pady=(6, 0))
 
     def _build_sidebar(self, parent):
-        side = tk.Frame(parent, bg=BG, width=300)
+        side = ttk.Frame(parent, width=300)
         side.grid(row=0, column=0, sticky="ns")
         side.grid_propagate(False)
 
-        self._section_label(side, "FOLDER GAMBAR (.jpg)")
-        folder = Card(side, radius=11, pad=6)
-        folder.pack(fill="x", pady=(4, 14))
-        tk.Entry(folder.body, textvariable=self.var_folder, bg=SURFACE, fg=TEXT,
-                 relief="flat", font=("Segoe UI", 11),
-                 insertbackground=ACCENT).pack(side="left", fill="x",
-                                               expand=True, padx=(8, 6), pady=5)
-        browse = RoundedButton(folder.body, "BROWSE", self.choose_folder,
-                               fill=SURFACE2, fg=TEXT, hover=BORDER,
-                               font=("Cascadia Mono", 10), height=30, radius=8,
-                               bg=SURFACE)
-        browse.configure(width=84)
-        browse.pack(side="right", padx=(0, 3), pady=3)
+        # ---- folder
+        gf = ttk.Labelframe(side, text="Folder gambar (.jpg)", padding=8)
+        gf.pack(fill="x", pady=(0, 8))
+        ttk.Entry(gf, textvariable=self.var_folder, font=F_UI).pack(
+            side="left", fill="x", expand=True, padx=(0, 6), ipady=2)
+        ttk.Button(gf, text="Browse…", width=9,
+                   command=self.choose_folder).pack(side="right")
 
-        self._section_label(side, "TAHAP PROSES")
-        stages = Card(side, radius=11, pad=6)
-        stages.pack(fill="x", pady=(4, 14))
-        for i, (title, key) in enumerate(STAGES, start=1):
-            btn = StageButton(stages.body, i, title,
-                              command=lambda k=key: self.select_stage(k))
-            btn.pack(fill="x")
-            self.stage_buttons[key] = btn
-            if i < len(STAGES):
-                tk.Frame(stages.body, bg=BG, height=1).pack(fill="x")
+        # ---- tahap proses
+        gs = ttk.Labelframe(side, text="Tahap proses", padding=6)
+        gs.pack(fill="x", pady=(0, 8))
+        self.listbox = tk.Listbox(
+            gs, height=len(STAGES), font=("Segoe UI", 10), bd=1,
+            relief="sunken", bg=FIELD, fg=TEXT, highlightthickness=1,
+            highlightbackground=BORDER, selectbackground=SEL_BG,
+            selectforeground=TEXT, activestyle="none", exportselection=False)
+        for i, (title, _key) in enumerate(STAGES, start=1):
+            self.listbox.insert("end", f"  {i:02d}    {title}")
+        self.listbox.pack(fill="x")
+        self.listbox.bind("<<ListboxSelect>>", self._on_stage_select)
 
-        self.btn_start = RoundedButton(side, "▶  START", self.start,
-                                       font=("Bahnschrift", 15), height=50)
-        self.btn_start.pack(fill="x", pady=(2, 12))
+        # ---- tombol start (timbul)
+        self.btn_start = ttk.Button(side, text="▶  START",
+                                    style="Big.TButton", command=self.start)
+        self.btn_start.pack(fill="x", pady=(2, 10))
 
+        # ---- console
         self._build_log(side)
 
     def _build_preview(self, parent):
-        card = Card(parent, radius=12, pad=8, expand=True)
-        card.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
-        bar = tk.Frame(card.body, bg=SURFACE)
-        bar.pack(fill="x", padx=4, pady=(2, 4))
-        tk.Label(bar, text="PREVIEW", bg=SURFACE, fg=TEXT,
-                 font=("Bahnschrift", 15)).pack(side="left")
-        self.lbl_preview_stage = tk.Label(bar, text="", bg=SURFACE, fg=ACCENT,
-                                          font=("Cascadia Mono", 10))
+        gp = ttk.Labelframe(parent, text="Preview", padding=8)
+        gp.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
+        gp.rowconfigure(1, weight=1)
+        gp.columnconfigure(0, weight=1)
+        topbar = ttk.Frame(gp)
+        topbar.grid(row=0, column=0, sticky="ew")
+        self.lbl_preview_stage = tk.Label(topbar, text="", bg=FACE, fg=ACCENT,
+                                          font=F_BOLD)
         self.lbl_preview_stage.pack(side="right")
 
-        self.fig = Figure(figsize=(5.6, 3.8), dpi=100, facecolor=SURFACE)
+        self.fig = Figure(figsize=(5.6, 3.8), dpi=100, facecolor=FACE)
         self.fig.subplots_adjust(left=0.02, right=0.98, top=0.85, bottom=0.03,
                                  wspace=0.06)
         self.ax_before = self.fig.add_subplot(1, 2, 1)
         self.ax_after = self.fig.add_subplot(1, 2, 2)
-        self.canvas = FigureCanvasTkAgg(self.fig, master=card.body)
-        self.canvas.get_tk_widget().configure(bg=SURFACE, highlightthickness=0)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=gp)
+        w = self.canvas.get_tk_widget()
+        w.configure(bg=FACE, highlightthickness=0)
+        w.grid(row=1, column=0, sticky="nsew")
         self._render_blank()
 
     def _build_params(self, parent):
-        rowf = tk.Frame(parent, bg=BG)
-        rowf.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        rowf = ttk.Frame(parent)
+        rowf.grid(row=1, column=0, sticky="ew")
         rowf.columnconfigure((0, 1, 2), weight=1, uniform="param")
 
-        c1 = Card(rowf, radius=12, pad=10)
+        # RESIZING
+        c1 = ttk.Labelframe(rowf, text="Resizing", padding=10)
         c1.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
-        self._param_title(c1.body, "RESIZING")
-        g1 = tk.Frame(c1.body, bg=SURFACE)
-        g1.pack(fill="x")
-        self._radio(g1, "Average Pooling", pp.AVERAGE, 0, 0, columnspan=2)
-        self._radio(g1, "Max Pooling", pp.MAX, 1, 0, columnspan=2)
-        tk.Label(g1, text="Row", bg=SURFACE, fg=TEXT,
-                 font=("Segoe UI", 11)).grid(row=2, column=0, sticky="w",
-                                            pady=(8, 0))
-        self._entry(g1, self.var_row, 2, 1)
-        tk.Label(g1, text="Col", bg=SURFACE, fg=TEXT,
-                 font=("Segoe UI", 11)).grid(row=3, column=0, sticky="w",
-                                            pady=(2, 0))
-        self._entry(g1, self.var_col, 3, 1)
+        ttk.Radiobutton(c1, text="Average Pooling", value=pp.AVERAGE,
+                        variable=self.var_pooling).grid(row=0, column=0,
+                                                        columnspan=2, sticky="w")
+        ttk.Radiobutton(c1, text="Max Pooling", value=pp.MAX,
+                        variable=self.var_pooling).grid(row=1, column=0,
+                                                        columnspan=2, sticky="w")
+        ttk.Label(c1, text="Row").grid(row=2, column=0, sticky="w", pady=(8, 0))
+        self._entry(c1, self.var_row, 2, 1)
+        ttk.Label(c1, text="Col").grid(row=3, column=0, sticky="w", pady=(2, 0))
+        self._entry(c1, self.var_col, 3, 1)
 
-        c2 = Card(rowf, radius=12, pad=10)
+        # BINARIZATION
+        c2 = ttk.Labelframe(rowf, text="Binarization", padding=10)
         c2.grid(row=0, column=1, sticky="nsew", padx=4)
-        self._param_title(c2.body, "BINARIZATION")
-        g2 = tk.Frame(c2.body, bg=SURFACE)
-        g2.pack(fill="x")
-        tk.Label(g2, text="Threshold", bg=SURFACE, fg=TEXT,
-                 font=("Segoe UI", 11)).grid(row=0, column=0, sticky="w")
-        self._entry(g2, self.var_threshold, 0, 1)
-        self._check(g2, "Inversi (latar hitam, objek putih)", 1, 0,
-                    columnspan=2)
+        ttk.Label(c2, text="Threshold").grid(row=0, column=0, sticky="w")
+        self._entry(c2, self.var_threshold, 0, 1)
+        ttk.Checkbutton(c2, text="Inversi (latar hitam,\nobjek putih)",
+                        variable=self.var_invert).grid(row=1, column=0,
+                                                       columnspan=2, sticky="w",
+                                                       pady=(8, 0))
 
-        c3 = Card(rowf, radius=12, pad=10)
+        # ANN
+        c3 = ttk.Labelframe(rowf, text="ANN", padding=10)
         c3.grid(row=0, column=2, sticky="nsew", padx=(4, 0))
-        self._param_title(c3.body, "ANN")
-        g3 = tk.Frame(c3.body, bg=SURFACE)
-        g3.pack(fill="x")
         for i, (lbl, var) in enumerate([("Hidden", self.var_hidden),
                                         ("Epochs", self.var_epochs),
                                         ("Sampel uji", self.var_sample)]):
-            tk.Label(g3, text=lbl, bg=SURFACE, fg=TEXT,
-                     font=("Segoe UI", 11)).grid(row=i, column=0, sticky="w",
-                                                pady=2)
-            self._entry(g3, var, i, 1)
+            ttk.Label(c3, text=lbl).grid(row=i, column=0, sticky="w", pady=2)
+            self._entry(c3, var, i, 1)
 
     def _build_log(self, parent):
-        card = Card(parent, radius=12, pad=8, fill=CONSOLE,
-                   border=BORDER, expand=True)
-        card.pack(fill="both", expand=True)
-        bar = tk.Frame(card.body, bg=CONSOLE)
-        bar.pack(fill="x", padx=4, pady=(2, 2))
-        tk.Label(bar, text="● CONSOLE", bg=CONSOLE, fg=ACCENT,
-                 font=("Cascadia Mono", 10)).pack(side="left")
-        self.text_log = tk.Text(card.body, bg=CONSOLE, fg=CONSOLE_FG,
-                                relief="flat", font=("Cascadia Mono", 11),
-                                insertbackground=ACCENT, padx=8, pady=6,
-                                state="disabled", wrap="word",
-                                highlightthickness=0)
-        self.text_log.pack(fill="both", expand=True)
-        self.text_log.tag_configure("head", foreground=ACCENT)
+        gl = ttk.Labelframe(parent, text="Console", padding=6)
+        gl.pack(fill="both", expand=True)
+        wrap = tk.Frame(gl, bg=BORDER, bd=0)
+        wrap.pack(fill="both", expand=True)
+        self.text_log = tk.Text(wrap, bg=FIELD, fg=TEXT, relief="flat",
+                                font=F_MONO, padx=8, pady=6, state="disabled",
+                                wrap="word", highlightthickness=0, bd=0)
+        scroll = ttk.Scrollbar(wrap, orient="vertical",
+                               command=self.text_log.yview)
+        self.text_log.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.text_log.pack(side="left", fill="both", expand=True, padx=1, pady=1)
+        self.text_log.tag_configure("head", foreground=ACCENT, font=F_BOLD)
         self.text_log.tag_configure("err", foreground=DANGER)
 
     # ----------------------------------------------------------- komponen UI
-    def _section_label(self, parent, text):
-        tk.Label(parent, text=text, bg=BG, fg=MUTED,
-                 font=("Cascadia Mono", 10)).pack(anchor="w")
-
-    def _param_title(self, parent, text):
-        tk.Label(parent, text=text, bg=SURFACE, fg=ACCENT,
-                 font=("Cascadia Mono", 10)).pack(anchor="w", pady=(0, 8))
-
-    def _entry(self, parent, var, row, column, sticky="w"):
-        wrap = Card(parent, radius=7, pad=0, fill=SURFACE2, bg=SURFACE)
-        wrap.configure(width=82)
-        wrap.grid(row=row, column=column, sticky=sticky, padx=2, pady=2)
-        tk.Entry(wrap.body, textvariable=var, bg=SURFACE2, fg=ACCENT, width=5,
-                 relief="flat", font=("Cascadia Mono", 13),
-                 insertbackground=ACCENT, justify="center").pack(padx=4, pady=4)
-
-    def _radio(self, parent, text, value, row, column, columnspan=1):
-        tk.Radiobutton(parent, text=text, value=value, variable=self.var_pooling,
-                       bg=SURFACE, fg=TEXT, selectcolor=SURFACE2,
-                       activebackground=SURFACE, activeforeground=ACCENT,
-                       font=("Segoe UI", 11), anchor="w", highlightthickness=0,
-                       bd=0).grid(row=row, column=column, columnspan=columnspan,
-                                  sticky="w")
-
-    def _check(self, parent, text, row, column, columnspan=1):
-        tk.Checkbutton(parent, text=text, variable=self.var_invert, bg=SURFACE,
-                       fg=TEXT, selectcolor=SURFACE2, activebackground=SURFACE,
-                       activeforeground=ACCENT, font=("Segoe UI", 11),
-                       anchor="w", justify="left", wraplength=150,
-                       highlightthickness=0, bd=0).grid(
-            row=row, column=column, columnspan=columnspan, sticky="w",
-            pady=(6, 0))
+    def _entry(self, parent, var, row, column):
+        ttk.Entry(parent, textvariable=var, width=7, justify="center",
+                  font=F_MONO).grid(row=row, column=column, sticky="w",
+                                    padx=4, pady=2, ipady=1)
 
     # ----------------------------------------------------------- preview viz
     def _style_axis(self, ax, caption, color):
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_facecolor(SURFACE2)
+        ax.set_facecolor(FIELD)
         for spine in ax.spines.values():
             spine.set_color(BORDER)
-        ax.set_title(caption, color=color, fontsize=13, fontfamily="monospace",
+        ax.set_title(caption, color=color, fontsize=12, fontfamily="sans-serif",
                      pad=8, loc="left", fontweight="bold")
 
     def _placeholder(self, ax, caption, text):
         ax.clear()
         self._style_axis(ax, caption, MUTED)
-        ax.text(0.5, 0.5, text, color=MUTED, fontsize=12, ha="center",
-                va="center", fontfamily="monospace", transform=ax.transAxes)
+        ax.text(0.5, 0.5, text, color=MUTED, fontsize=11, ha="center",
+                va="center", fontfamily="sans-serif", transform=ax.transAxes)
 
     def _render_blank(self):
         self._placeholder(self.ax_before, "INPUT", "—")
@@ -480,10 +340,17 @@ class App(tk.Tk):
         self.canvas.draw()
 
     # --------------------------------------------------------------- perilaku
+    def _on_stage_select(self, _event):
+        sel = self.listbox.curselection()
+        if sel:
+            self.select_stage(STAGES[sel[0]][1])
+
     def select_stage(self, key):
         self.stage_key = key
-        for k, btn in self.stage_buttons.items():
-            btn.set_active(k == key)
+        idx = [k for _t, k in STAGES].index(key)
+        self.listbox.selection_clear(0, "end")
+        self.listbox.selection_set(idx)
+        self.listbox.activate(idx)
         self.refresh_preview()
 
     def choose_folder(self):
@@ -544,8 +411,8 @@ class App(tk.Tk):
         title = dict((k, t) for t, k in STAGES)[stage]
         self.log("")
         self.log(f"=== {title} ===", "head")
-        self.set_status("● RUNNING", ACCENT)
-        self.btn_start.set_enabled(False, "…  WORKING")
+        self.set_status("●  RUNNING", ACCENT)
+        self.btn_start.configure(text="…  WORKING", state="disabled")
         self.update_idletasks()
         try:
             self.run_stage(stage, custom_path)
@@ -554,8 +421,8 @@ class App(tk.Tk):
         except Exception as error:
             self.log(f"Terjadi error: {error}", "err")
         finally:
-            self.btn_start.set_enabled(True, "▶  START")
-            self.set_status("● DONE", ACCENT)
+            self.btn_start.configure(text="▶  START", state="normal")
+            self.set_status("●  DONE", "#1E7D34")
             self.refresh_preview()
 
     def run_stage(self, stage, custom_path):
