@@ -18,16 +18,18 @@ from tkinter import filedialog
 import preprocessing as pp
 
 # --------------------------------------------------------------------- tema
-BG = "#0C0F14"
-SURFACE = "#141922"
-SURFACE2 = "#1B222E"
-BORDER = "#2A3340"
-TEXT = "#EDF2F8"
-MUTED = "#9DABBF"
-ACCENT = "#C8FF3C"
-ACCENT_HI = "#D6FF6B"
-INK = "#0C0F14"
-DANGER = "#FF6B6B"
+BG = "#F4F6FB"
+SURFACE = "#FFFFFF"
+SURFACE2 = "#EEF1F7"
+BORDER = "#D9DFEA"
+TEXT = "#1A2230"
+MUTED = "#6B7686"
+ACCENT = "#3B6CF6"
+ACCENT_HI = "#1E4FD8"
+INK = "#FFFFFF"
+DANGER = "#E5484D"
+CONSOLE = "#F1F3F9"
+CONSOLE_FG = "#2A3344"
 
 STAGES = [
     ("Color-to-Grayscale", "grayscale"),
@@ -347,14 +349,14 @@ class App(tk.Tk):
             self._entry(g3, var, i, 1)
 
     def _build_log(self, parent):
-        card = Card(parent, radius=12, pad=8, fill="#0A0D12",
+        card = Card(parent, radius=12, pad=8, fill=CONSOLE,
                    border=BORDER, expand=True)
         card.pack(fill="both", expand=True)
-        bar = tk.Frame(card.body, bg="#0A0D12")
+        bar = tk.Frame(card.body, bg=CONSOLE)
         bar.pack(fill="x", padx=4, pady=(2, 2))
-        tk.Label(bar, text="● CONSOLE", bg="#0A0D12", fg=ACCENT,
+        tk.Label(bar, text="● CONSOLE", bg=CONSOLE, fg=ACCENT,
                  font=("Cascadia Mono", 10)).pack(side="left")
-        self.text_log = tk.Text(card.body, bg="#0A0D12", fg="#D4DEEA",
+        self.text_log = tk.Text(card.body, bg=CONSOLE, fg=CONSOLE_FG,
                                 relief="flat", font=("Cascadia Mono", 11),
                                 insertbackground=ACCENT, padx=8, pady=6,
                                 state="disabled", wrap="word",
