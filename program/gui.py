@@ -28,6 +28,11 @@ ACCENT = "#1565C0"    # biru judul (gaya tautan Win7)
 BORDER = "#C2C2C2"
 SEL_BG = "#CCE4F7"    # sorot pilihan (Win7)
 DANGER = "#C42B1C"
+BTN = "#E6E6E6"       # tombol abu klasik (timbul)
+BTN_DN = "#D2D2D2"
+ACCENT_BTN = "#2F6FE0"    # tombol utama biru
+ACCENT_BTN_HI = "#3D7CF0"
+ACCENT_BTN_DN = "#2659BE"
 
 F_UI = ("Segoe UI", 9)
 F_BOLD = ("Segoe UI", 9, "bold")
@@ -153,8 +158,10 @@ class App(tk.Tk):
         gf.pack(fill="x", pady=(0, 8))
         ttk.Entry(gf, textvariable=self.var_folder, font=F_UI).pack(
             side="left", fill="x", expand=True, padx=(0, 6), ipady=2)
-        ttk.Button(gf, text="Browse…", width=9,
-                   command=self.choose_folder).pack(side="right")
+        tk.Button(gf, text="Browse…", command=self.choose_folder,
+                  font=F_UI, bg=BTN, activebackground=BTN_DN,
+                  relief="raised", bd=3, padx=8, pady=2,
+                  cursor="hand2").pack(side="right")
 
         # ---- tahap proses
         gs = ttk.Labelframe(side, text="Tahap proses", padding=6)
@@ -169,10 +176,19 @@ class App(tk.Tk):
         self.listbox.pack(fill="x")
         self.listbox.bind("<<ListboxSelect>>", self._on_stage_select)
 
-        # ---- tombol start (timbul)
-        self.btn_start = ttk.Button(side, text="▶  START",
-                                    style="Big.TButton", command=self.start)
+        # ---- tombol start (timbul beveled, gaya klasik)
+        self.btn_start = tk.Button(
+            side, text="▶  START", command=self.start,
+            font=("Segoe UI", 13, "bold"), bg=ACCENT_BTN, fg="white",
+            activebackground=ACCENT_BTN_DN, activeforeground="white",
+            relief="raised", bd=5, pady=8, cursor="hand2",
+            highlightthickness=0, disabledforeground="#D8E2F0")
         self.btn_start.pack(fill="x", pady=(2, 10))
+        self.btn_start.bind(
+            "<Enter>", lambda e: self.btn_start["state"] == "normal"
+            and self.btn_start.configure(bg=ACCENT_BTN_HI))
+        self.btn_start.bind(
+            "<Leave>", lambda e: self.btn_start.configure(bg=ACCENT_BTN))
 
         # ---- console
         self._build_log(side)
