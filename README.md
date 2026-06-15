@@ -87,7 +87,7 @@ kelas; pasangan input–label tetap konsisten.
 </p>
 
 **6. Pembuktian — ANN** — ANN dilatih pada dataset hasil pipeline dan mencapai
-akurasi ~98–100% pada 3 kelas Katakana.
+akurasi 96,67% pada 3 kelas Katakana (100 epoch).
 
 <p align="center">
   <img src="assets/grafik_akurasi.png" alt="Grafik akurasi pelatihan" width="70%">
@@ -157,4 +157,4 @@ visionprep/
 - **Tanpa pustaka pihak ketiga di inti.** Grayscale, pooling, binarisasi,
   flattening, pengacakan, dan ANN seluruhnya implementasi NumPy manual.
 - **Pembuktian dataset.** ANN dilatih pada dataset hasil pipeline dan mencapai
-  akurasi ~98–100% pada 3 kelas Katakana, membuktikan dataset terpisah dengan baik.
+  akurasi 96,67% pada 3 kelas Katakana (100 epoch), membuktikan dataset terpisah dengan baik.
